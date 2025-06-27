@@ -3,11 +3,15 @@ const dotenv = require("dotenv")
 dotenv.config()
 const connectedDB = require("./src/config/connectedDb")
 const { notFound, errorHandler } = require("./src/middelware/errorHandle")
+const { default: helmet } = require("helmet")
+const cors = require("cors")
 // init app 
 const app = express()
 
 // middleware
 app.use(express.json());
+app.use(helmet())
+app.use(cors())
 
 // routes
 app.use("/api/auth" , require("./src/route/authRoutes"))
