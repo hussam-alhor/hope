@@ -45,6 +45,7 @@ module.exports.loginUserCtrl = expressAsyncHandler(async(req,res)=>{
     const token = user.generateAuthToken()
     return res.status(200).json({
         id: user._id,
+        isAdmin : user.isAdmin,
         userName: user.userName,
         email: user.email,
         token
