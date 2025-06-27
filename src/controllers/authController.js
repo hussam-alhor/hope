@@ -46,6 +46,7 @@ module.exports.loginUserCtrl = expressAsyncHandler(async(req,res)=>{
     return res.status(200).json({
         id: user._id,
         isAdmin : user.isAdmin,
+        wallet: user.wallet,
         userName: user.userName,
         email: user.email,
         token
