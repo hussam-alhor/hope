@@ -11,13 +11,23 @@ const photoStorage = multer.diskStorage({
     cb(null, uploadDir); 
   },
   filename: (req, file, cb) => {
-    if (file) {
-      // استبدل الأحرف غير المسموح بها في أسماء الملفات
-      const safeFileName = file.originalname.replace(/[^a-zA-Z0-9_.-]/g, '_');
-      cb(null, new Date().toISOString().replace(/:/g, "-") + safeFileName);
-    } else {
-      cb(null, false);
-    }
+     if (file) {
+    const safeFileName = file.originalname.replace(/[^a-zA-Z0-9_.-]/g, '_');
+    // استبدال جميع النقطتين (:)
+    const timestamp = new Date().toISOString().replace(/:/g, "-");
+    cb(null, timestamp + safeFileName);
+  } else {
+    cb(null, false);
+  }
+
+    // if (file) {
+      
+    //   // استبدل الأحرف غير المسموح بها في أسماء الملفات
+    //   const safeFileName = file.originalname.replace(/[^a-zA-Z0-9_.-]/g, '_');
+    //   cb(null, new Date().toISOString().replace(/:/g, "-") + safeFileName);
+    // } else {
+    //   cb(null, false);
+    // }
   }
 });
 
