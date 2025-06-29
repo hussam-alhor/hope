@@ -9,20 +9,28 @@ const fs = require("fs");
  * @access Private
  */
 const createBlog = expressAsyncHandler(async (req, res) => {
-    const { error } = validateCreateBlog(req.body);
-    if (error) {
-        return res.status(400).json({ message: error.details[0].message });
-    }
-    const { title, description } = req.body;
-    const image = req.file ? req.file.filename : null;
+  const { error } = validateCreateBlog(req.body);
+  if (error) {
+    return res.status(400).json({ message: error.details[0].message });
+  }
 
-    const blog = await Blog.create({
-        title,
-        description,
-        image,
-    });
+  // التأكد من وجود الملف
+  if (!req.file) {
+    return res.status(400).json({ message: "Image file is required" });
+  }
 
-    res.status(201).json(blog);
+  const { title, description } = req.body;
+  
+  // استخدام رابط الصورة من Cloudinary
+  const image = req.file.path; 
+
+  const blog = await Blog.create({
+    title,
+    description,
+    image,
+  });
+
+  res.status(201).json(blog);
 });
 
 /**

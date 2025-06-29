@@ -7,19 +7,19 @@ const {
   deleteBlog,
   deleteAllBlogs,
 } = require("../controllers/blogController");
-const photoUpload = require("../middelware/photoStorage");
+const cloudinaryUpload  = require("../middelware/photoStorage");
 const { verifyTokenAndOnlyAdmin } = require("../middelware/verifyToken");
 const { validateObjectId } = require("../middelware/validateObjectId");
 const router = express.Router();
 
 router.route("/")
   .get(getBlogs)
-  .post(verifyTokenAndOnlyAdmin , photoUpload.single("image"), createBlog)
-  .delete(deleteAllBlogs)
+  .post(verifyTokenAndOnlyAdmin , cloudinaryUpload.single("image"), createBlog)
+  .delete(verifyTokenAndOnlyAdmin,deleteAllBlogs)
 
 router.route("/:id")
   .get(verifyTokenAndOnlyAdmin,validateObjectId ,getBlogById)
-  .put(verifyTokenAndOnlyAdmin ,validateObjectId ,photoUpload.single("image"), updateBlog)
+  .put(verifyTokenAndOnlyAdmin ,validateObjectId ,cloudinaryUpload.single("image"), updateBlog)
   .delete( verifyTokenAndOnlyAdmin ,validateObjectId ,deleteBlog);
 
 module.exports = router;

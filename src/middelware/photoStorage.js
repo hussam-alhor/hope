@@ -1,53 +1,33 @@
-const path = require("path");
-const multer = require("multer");
-const fs = require("fs");
+const multer = require('multer');
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
+const cloudinary = require('../config/cloudinary');
 
-// تحديد مسار مجلد الصور
-const uploadDir = path.join(__dirname, "../images");
-console.log("Upload directory:", uploadDir); 
-
-const photoStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadDir); 
-  },
-  filename: (req, file, cb) => {
-     if (file) {
-    const safeFileName = file.originalname.replace(/[^a-zA-Z0-9_.-]/g, '_');
-    // استبدال جميع النقطتين (:)
-    const timestamp = new Date().toISOString().replace(/:/g, "-");
-    cb(null, timestamp + safeFileName);
-  } else {
-    cb(null, false);
-  }
-
-    // if (file) {
-      
-    //   // استبدل الأحرف غير المسموح بها في أسماء الملفات
-    //   const safeFileName = file.originalname.replace(/[^a-zA-Z0-9_.-]/g, '_');
-    //   cb(null, new Date().toISOString().replace(/:/g, "-") + safeFileName);
-    // } else {
-    //   cb(null, false);
-    // }
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: async (req, file) => {
+    return {
+      folder: 'blog-images',
+      public_id: `${Date.now()}-${file.originalname.replace(/\.[^/.]+$/, '')}`,
+      transformation: [{ width: 800, crop: "scale" }],
+      allowed_formats: ['jpeg', 'png', 'jpg', 'webp']
+    };
   }
 });
 
 module.exports = multer({
-  storage: photoStorage,
+  storage: storage,
   fileFilter: (req, file, cb) => {
     const allowedExtensions = ["jfif", "png", "jpg", "jpeg", "webp"];
-    const fileExtension = file.originalname
-      .toLowerCase()
-      .split(".")
-      .pop();
+    const fileExtension = file.originalname.toLowerCase().split('.').pop();
     
     if (
-      file.mimetype.startsWith("image/") || 
+      file.mimetype.startsWith('image/') && 
       allowedExtensions.includes(fileExtension)
     ) {
       cb(null, true);
     } else {
-      cb({ message: "Unsupported file format" }, false);
+      cb(new Error('Unsupported file format!'), false);
     }
   },
-  limits: { fileSize: 5 * 1024 * 1024 } // 5MB
+  limits: { fileSize: 5 * 1024 * 1024 }
 });
