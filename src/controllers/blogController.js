@@ -2,6 +2,7 @@ const expressAsyncHandler = require("express-async-handler");
 const { Blog, validateCreateBlog, validateUpdateeBlog } = require("../model/Blog");
 const path = require("path")
 const fs = require("fs");
+const { cloudinaryRemoveImage, cloudinaryRemoveMultipleImage } = require("../config/cloudinary");
 
 /**
  * @desc Create a new blog post
@@ -14,23 +15,23 @@ const createBlog = expressAsyncHandler(async (req, res) => {
     return res.status(400).json({ message: error.details[0].message });
   }
 
-  // التأكد من وجود الملف
-  if (!req.file) {
+    if (!req.file) {
     return res.status(400).json({ message: "Image file is required" });
   }
 
-  const { title, description } = req.body;
-  
-  // استخدام رابط الصورة من Cloudinary
-  const image = req.file.path; 
+  try {
+    // استخدام البيانات من الميدل وير مباشرة
+    const blog = await Blog.create({
+      title: req.body.title,
+      description: req.body.description,
+      image: req.file.path,        // URL من Cloudinary
+      imagePublicId: req.file.filename // public_id من Cloudinary
+    });
 
-  const blog = await Blog.create({
-    title,
-    description,
-    image,
-  });
-
-  res.status(201).json(blog);
+    res.status(201).json(blog);
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
 });
 
 /**
@@ -68,31 +69,36 @@ const updateBlog = expressAsyncHandler(async (req, res) => {
     const blog = await Blog.findById(req.params.id);
 
     if (!blog) {
-        res.status(404).json({ message: "Blog not found" });
+        return res.status(404).json({ message: "Blog not found" });
     }
     const { error } = validateUpdateeBlog(req.body);
     if (error) {
-        res.status(400).json({ message: error.details[0].message });;
+        return res.status(400).json({ message: error.details[0].message });
     }
-    // حذف الصورة القديمة إذا تم رفع صورة جديدة
-  if (req.file && blog.image) {
-    const oldImagePath = path.join(__dirname, `../images/${blog.image}`);
-    if (fs.existsSync(oldImagePath)) {
-      try {
-        fs.unlinkSync(oldImagePath);
-      } catch (err) {
-        res.status(400).json({message: "Error deleting old image"});
+    
+    const updateData = {
+    title: req.body.title,
+    description: req.body.description
+  };
+
+  if (req.file) {
+    try {
+      // حذف الصورة القديمة إذا وجدت
+      if (blog.imagePublicId) {
+        await cloudinaryRemoveImage(blog.imagePublicId);
       }
+
+      // استخدام البيانات الجديدة من الميدل وير
+      updateData.image = req.file.path;
+      updateData.imagePublicId = req.file.filename;
+    } catch (error) {
+      return res.status(500).json({ message: "Error updating image" });
     }
   }
 
-    const updatedBlog = await Blog.findByIdAndUpdate(req.params.id, {
-        title: req.body.title,
-        description: req.body.description,
-        image: req.file.filename
-    }, {
+    const updatedBlog = await Blog.findByIdAndUpdate(req.params.id, updateData, {
         new: true
-    })
+    });
 
     res.status(200).json(updatedBlog);
 });
@@ -109,21 +115,15 @@ const deleteBlog = expressAsyncHandler(async (req, res) => {
         res.status(404);
         throw new Error("Blog post not found");
     }
-    // حذف الصورة المرتبطة
-    if (blog.image) {
-      const imagePath = path.join(__dirname, `../images/${blog.image}`);
-
-        // التحقق من وجود الملف قبل الحذف
-        if (fs.existsSync(imagePath)) {
-            try {
-                fs.unlinkSync(imagePath);
-                console.log("Deleted image:", imagePath);
-            } catch (err) {
-                console.error("Failed to delete image:", err);
-            }
+    if (blog.imagePublicId) {
+        try {
+            await cloudinaryRemoveImage(blog.imagePublicId);
+        } catch (error) {
+            console.error("Error deleting image from Cloudinary:", error);
+            return res.status(500).json({ message: "Error deleting image from Cloudinary" });
         }
     }
-    await Blog.findByIdAndDelete(req.params.id)
+    await Blog.findByIdAndDelete(req.params.id);
 
     res.status(200).json({ message: "Blog post removed" });
 });
@@ -133,27 +133,29 @@ const deleteBlog = expressAsyncHandler(async (req, res) => {
  * @access Private
  */
 const deleteAllBlogs = expressAsyncHandler(async (req, res) => {
-    const blogs = await Blog.find()
-    if (blogs.length == 0) {
-        return res.status(400).json({ message: "No blogs founded" })
+    const blogs = await Blog.find();
+
+    if (blogs.length === 0) {
+        return res.status(404).json({ message: "No blogs found" });
     }
-     // حذف جميع الصور أولاً
-  blogs.forEach(blog => {
-    if (blog.image) {
-      const imagePath = path.join(__dirname, `../images/${blog.image}`);
-      if (fs.existsSync(imagePath)) {
-        try {
-          fs.unlinkSync(imagePath);
-          console.log("Deleted image:", imagePath);
-        } catch (err) {
-          console.error("Failed to delete image:", err);
-        }
-      }
+
+    // حذف جميع الصور من Cloudinary
+    const publicIds = blogs
+        .filter(blog => blog.imagePublicId)
+        .map(blog => blog.imagePublicId);
+
+    try {
+        await cloudinaryRemoveMultipleImage(publicIds);
+    } catch (error) {
+        console.error("Error deleting images from Cloudinary:", error);
+        return res.status(500).json({ message: "Error deleting images from Cloudinary" });
     }
-  });
-    await Blog.deleteMany()
-    return res.status(200).json({ message: "All blogs deleted" })
-})
+
+    // حذف جميع المدونات من قاعدة البيانات
+    await Blog.deleteMany();
+
+    return res.status(200).json({ message: "All blogs have been deleted" });
+});
 module.exports = {
     createBlog,
     getBlogs,

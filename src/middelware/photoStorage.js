@@ -1,15 +1,16 @@
 const multer = require('multer');
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
-const cloudinary = require('../config/cloudinary');
+const { cloudinary } = require('../config/cloudinary'); 
 
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
-  params: async (req, file) => {
+  params: (req, file) => {
     return {
       folder: 'blog-images',
       public_id: `${Date.now()}-${file.originalname.replace(/\.[^/.]+$/, '')}`,
       transformation: [{ width: 800, crop: "scale" }],
-      allowed_formats: ['jpeg', 'png', 'jpg', 'webp']
+      allowed_formats: ["jfif", 'jpeg', 'png', 'jpg', 'webp'],
+      resource_type: 'auto' 
     };
   }
 });
