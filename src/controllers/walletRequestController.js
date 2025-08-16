@@ -23,7 +23,7 @@ module.exports.createWalletRequestCtrl = expressAsyncHandler(async (req, res) =>
 });
 
 /**
- * @desc create new request
+ * @desc GET wallet request
  * @route /api/wallet-requests
  * @access Private (only admin)
  */
@@ -57,11 +57,14 @@ module.exports.updateWalletRequestCtrl = expressAsyncHandler(async (req, res) =>
       $inc: { wallet: request.amount },
     });
   }
-
   res.status(200).json(request);
 });
 
-// الحصول على طلبات مستخدم معين
+/**
+ * @desc get wallet request for user
+ * @route /api/wallet-requests/:id
+ * @access Private (only admin)
+ */
 module.exports.getUserRequestsCtrl = expressAsyncHandler(async (req, res) => {
   const requests = await WalletRequest.find({ user: req.user.id });
   res.status(200).json(requests);

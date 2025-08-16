@@ -20,12 +20,12 @@ const createBlog = expressAsyncHandler(async (req, res) => {
   }
 
   try {
-    // استخدام البيانات من الميدل وير مباشرة
+    
     const blog = await Blog.create({
       title: req.body.title,
       description: req.body.description,
-      image: req.file.path,        // URL من Cloudinary
-      imagePublicId: req.file.filename // public_id من Cloudinary
+      image: req.file.path,        
+      imagePublicId: req.file.filename 
     });
 
     res.status(201).json(blog);
