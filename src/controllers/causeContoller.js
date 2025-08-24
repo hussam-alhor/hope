@@ -76,6 +76,7 @@ const donateToCause = expressAsyncHandler(async (req, res) => {
 
         // 2. البحث عن القضية
         const cause = await Cause.findById(req.params.id).session(session);
+    
         if (!cause) {
             await session.abortTransaction();
             session.endSession();
@@ -98,14 +99,18 @@ const donateToCause = expressAsyncHandler(async (req, res) => {
         }
 
         // 5. التحقق من رصيد المستخدم
-        if (user.walletBalance < amount) {
+        if (user.wallet < amount) {
             await session.abortTransaction();
             session.endSession();
             return res.status(400).json({ message: "Insufficient balance in your wallet" });
         }
-
+        if(amount > cause.goal) {
+            await session.abortTransaction();
+            session.endSession();
+            return res.status(400).json({ message: "The target is less than the sent value" });
+        }
         // 6. تنفيذ عملية الدفع (خصم من المستخدم وإضافة للقضية)
-        user.walletBalance -= amount;
+        user.wallet -= amount;
         cause.raised += amount;
 
         // 7. حفظ التغييرات
