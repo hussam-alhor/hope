@@ -1,5 +1,4 @@
 const expressAsyncHandler = require("express-async-handler");
-const joi = require("joi");
 const {WalletRequest, validateRequestWallet} = require("../model/walletRequestSchema ");
 const { User } = require("../model/User");
 
@@ -29,7 +28,7 @@ module.exports.createWalletRequestCtrl = expressAsyncHandler(async (req, res) =>
  */
 module.exports.getAllWalletRequestsCtrl = expressAsyncHandler(async (req, res) => {
   const requests = await WalletRequest.find().populate("user", "userName email");
-  res.status(200).json(requests) .populate("user", ["-password"]);
+  res.status(200).json(requests) 
 });
 /**
  * @desc update wallet

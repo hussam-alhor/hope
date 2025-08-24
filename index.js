@@ -22,6 +22,7 @@ app.use("/api/users" , require("./src/route/userRouts"))
 app.use("/api/blog" , require("./src/route/blogRoutes"))
 app.use("/api/wallet-requests" , require("./src/route/walletRequestRoutes"))
 app.use("/api/cause", require("./src/route/causeRoutes"))
+app.use("/api/feedback", require("./src/route/feedbackRoutes"))
 
 // error handler
 app.use(notFound)
